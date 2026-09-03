@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: courier-tracking-system
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/courier_tracking_db
+    username: root
+    password: Root@123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
