@@ -24,7 +24,7 @@
         <java.version>17</java.version>
     </properties>
 
-    <dependencies>
+    <dependencies> 
 
         <!-- Spring Web -->
         <dependency>
