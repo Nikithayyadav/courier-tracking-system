@@ -11,7 +11,7 @@
         <artifactId>spring-boot-starter-parent</artifactId> 
         <version>3.5.5</version>
         <relativePath/>
-    </parent>
+    </parent> 
 
     <groupId>com.couriertracking</groupId>
     <artifactId>courier-tracking-system</artifactId>
