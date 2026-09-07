@@ -7,12 +7,17 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
+import com.couriertracking.staff.Staff;
+import com.couriertracking.staff.StaffRepository;
+import com.couriertracking.staff.StaffRole;
 
 @Service
 @RequiredArgsConstructor
 public class ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
+    private final StaffRepository staffRepository;
     private final CustomerRepository customerRepository;
     private final TrackingHistoryRepository trackingHistoryRepository;
 
@@ -188,5 +193,127 @@ public class ShipmentService {
         trackingHistoryRepository.save(history);
 
         return updatedShipment;
+    }
+
+    public ShipmentTrackingResponse trackShipment(String trackingNumber) {
+
+        Shipment shipment = shipmentRepository
+                .findByTrackingNumber(trackingNumber)
+                .orElseThrow(() ->
+                        new RuntimeException("Shipment not found"));
+
+        List<TrackingHistory> history =
+                trackingHistoryRepository
+                        .findByShipmentIdOrderByCreatedAtAsc(
+                                shipment.getId());
+
+        List<TrackingHistoryResponse> historyResponse =
+                history.stream()
+                        .map(item -> new TrackingHistoryResponse(
+                                item.getId(),
+                                item.getStatus(),
+                                item.getLocation(),
+                                item.getRemarks(),
+                                item.getCreatedAt()
+                        ))
+                        .toList();
+
+        return new ShipmentTrackingResponse(
+                shipment,
+                historyResponse
+        );
+    }
+    public Shipment assignDeliveryAgent(
+            UUID shipmentId,
+            AssignDeliveryAgentRequest request) {
+
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Shipment not found"));
+
+        Staff deliveryAgent = staffRepository
+                .findByIdAndRole(
+                        request.getDeliveryAgentId(),
+                        StaffRole.DELIVERY_AGENT
+                )
+                .orElseThrow(() ->
+                        new RuntimeException("Delivery agent not found"));
+
+        shipment.setDeliveryAgent(deliveryAgent);
+
+        return shipmentRepository.save(shipment);
+    }
+    public Shipment cancelShipment(UUID shipmentId) {
+
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Shipment not found"));
+
+        shipment.setStatus(ShipmentStatus.CANCELLED);
+
+        Shipment cancelledShipment =
+                shipmentRepository.save(shipment);
+
+        TrackingHistory history = new TrackingHistory();
+        history.setShipment(cancelledShipment);
+        history.setStatus(ShipmentStatus.CANCELLED);
+        history.setLocation("Shipment Counter");
+        history.setRemarks("Shipment cancelled");
+
+        trackingHistoryRepository.save(history);
+
+        return cancelledShipment;
+    }
+    public Shipment searchShipment(String trackingNumber) {
+
+        return shipmentRepository
+                .findByTrackingNumber(trackingNumber)
+                .orElseThrow(() ->
+                        new RuntimeException("Shipment not found"));
+    }
+    public List<TrackingHistoryResponse> getDeliveryHistory(UUID shipmentId) {
+
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Shipment not found"));
+
+        List<TrackingHistory> history =
+                trackingHistoryRepository
+                        .findByShipmentIdOrderByCreatedAtAsc(
+                                shipment.getId());
+
+        return history.stream()
+                .map(item -> new TrackingHistoryResponse(
+                        item.getId(),
+                        item.getStatus(),
+                        item.getLocation(),
+                        item.getRemarks(),
+                        item.getCreatedAt()
+                ))
+                .toList();
+    }
+    public Shipment confirmDelivery(
+            UUID shipmentId,
+            DeliveryConfirmationRequest request) {
+
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Shipment not found"));
+
+        shipment.setStatus(ShipmentStatus.DELIVERED);
+        shipment.setDeliveredAt(LocalDateTime.now());
+
+        Shipment deliveredShipment =
+                shipmentRepository.save(shipment);
+
+        TrackingHistory history = new TrackingHistory();
+        history.setShipment(deliveredShipment);
+        history.setStatus(ShipmentStatus.DELIVERED);
+        history.setLocation(request.getLocation());
+        history.setRemarks(request.getRemarks());
+
+        trackingHistoryRepository.save(history);
+
+        return deliveredShipment;
     }
 }
