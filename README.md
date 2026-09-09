@@ -1,5 +1,5 @@
 # Courier Tracking System
- 
+  
 A backend REST API built with **Java and Spring Boot** for managing customers, staff, courier shipments, delivery agents, shipment tracking, delivery status, delivery charges, and tracking history.
 
 The system follows a real-world courier/post-office counter workflow where staff create shipments by collecting sender, receiver, and package details. Customers can log in using their mobile number and OTP to view their shipment information.
